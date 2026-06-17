@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from app.config import get_settings
 from app.services.store import make_store
 from app.services.llm_service import run_turn, make_client
+from app.services.progress import merge_completion
 from app.sse import sse_event
 
 router = APIRouter(prefix="/api/sessions", tags=["chat"])
@@ -25,12 +26,14 @@ async def chat(session_id: str, body: ChatBody):
                for m in store.get_messages(session_id)]
     current_plan = store.get_plan(session_id)
 
-    async def save_plan(plan: dict) -> None:
-        store.save_plan(session_id, plan)
+    async def save_plan(plan: dict) -> dict:
+        merged = merge_completion(store.get_plan(session_id), plan)
+        store.save_plan(session_id, merged)
         # keep the session label in sync with the course title
-        title = (plan.get("title") or "").strip()
+        title = (merged.get("title") or "").strip()
         if title:
             store.update_session_title(session_id, title)
+        return merged
 
     async def event_stream():
         assistant_text: list[str] = []

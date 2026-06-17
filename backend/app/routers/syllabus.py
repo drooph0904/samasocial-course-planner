@@ -5,6 +5,7 @@ from app.config import get_settings
 from app.services.store import make_store
 from app.services.pdf_service import extract_text
 from app.services.llm_service import run_turn, make_client
+from app.services.progress import merge_completion
 from app.sse import sse_event
 
 router = APIRouter(prefix="/api/sessions", tags=["syllabus"])
@@ -34,11 +35,13 @@ async def import_syllabus(session_id: str, file: UploadFile = File(...)):
                for m in store.get_messages(session_id)]
     current_plan = store.get_plan(session_id)
 
-    async def save_plan(plan: dict) -> None:
-        store.save_plan(session_id, plan)
-        title = (plan.get("title") or "").strip()
+    async def save_plan(plan: dict) -> dict:
+        merged = merge_completion(store.get_plan(session_id), plan)
+        store.save_plan(session_id, merged)
+        title = (merged.get("title") or "").strip()
         if title:
             store.update_session_title(session_id, title)
+        return merged
 
     async def event_stream():
         assistant_text = []

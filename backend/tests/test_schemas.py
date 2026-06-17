@@ -25,7 +25,24 @@ SAMPLE = {
 def test_course_plan_roundtrips():
     plan = CoursePlan.model_validate(SAMPLE)
     assert plan.modules[0].lessons[0].difficulty == "beginner"
-    assert plan.model_dump() == SAMPLE
+    # `done` defaults to False for AI-authored plans (not in SAMPLE)
+    assert plan.modules[0].lessons[0].done is False
+    dumped = plan.model_dump()
+    assert dumped["modules"][0]["lessons"][0]["done"] is False
+    # everything except the new `done` field round-trips unchanged
+    del dumped["modules"][0]["lessons"][0]["done"]
+    assert dumped == SAMPLE
+
+def test_done_flag_persists_when_set():
+    sample = json.loads(json.dumps(SAMPLE))
+    sample["modules"][0]["lessons"][0]["done"] = True
+    plan = CoursePlan.model_validate(sample)
+    assert plan.modules[0].lessons[0].done is True
+
+def test_done_not_in_ai_tool_schema():
+    # the strict AI tool schema must NOT expose `done` (model never sets completion)
+    lesson_props = COURSE_PLAN_JSON_SCHEMA["properties"]["modules"]["items"]["properties"]["lessons"]["items"]["properties"]
+    assert "done" not in lesson_props
 
 def test_json_schema_is_strict():
     # Every object must forbid extra props (Anthropic strict-tool requirement)

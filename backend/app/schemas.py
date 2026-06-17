@@ -20,6 +20,9 @@ class Lesson(BaseModel):
     topics: list[str]
     difficulty: Difficulty
     resources: list[Resource]
+    # user-driven completion; intentionally NOT in COURSE_PLAN_JSON_SCHEMA,
+    # so the AI tool never sets or overwrites it. Defaults false for AI-authored plans.
+    done: bool = False
 
 
 class Module(BaseModel):

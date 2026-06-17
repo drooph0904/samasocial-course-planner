@@ -59,7 +59,7 @@ async def run_turn(
     model: str,
     messages: list[dict],
     current_plan: dict | None,
-    save_plan: Callable[[dict], Awaitable[None]],
+    save_plan: Callable[[dict], Awaitable[dict | None]],
 ) -> AsyncIterator[tuple[str, dict]]:
     """Run one chat turn as a streaming agentic loop. Yields (event, data) pairs:
     token, sources, plan_update, error, done.
@@ -122,8 +122,8 @@ async def run_turn(
                 outputs: list[dict] = []
                 for call in plan_calls:
                     plan = json.loads(call.arguments)
-                    await save_plan(plan)
-                    yield ("plan_update", {"plan": plan})
+                    stored = await save_plan(plan)
+                    yield ("plan_update", {"plan": stored or plan})
                     outputs.append({
                         "type": "function_call_output",
                         "call_id": call.call_id,
