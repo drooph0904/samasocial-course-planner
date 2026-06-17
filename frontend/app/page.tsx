@@ -57,12 +57,25 @@ export default function Home() {
     const list = await listSessions(); setSessions(list); return list;
   }
 
+  function prefetchAll(list: SessionSummary[]) {
+    for (const s of list) {
+      if (cacheRef.current.has(s.id)) continue;
+      getSession(s.id).then((data) => {
+        if (!data?.error) cacheRef.current.set(s.id, {
+          messages: (data.messages || []).map((m: any) => ({ role: m.role, content: m.content })),
+          plan: data.plan,
+        });
+      }).catch(() => {});
+    }
+  }
+
   useEffect(() => {
     (async () => {
       const list = await refreshSessions();
       if (list.length > 0) {
         const saved = localStorage.getItem("activeSessionId");
         await loadSession((list.find((s) => s.id === saved) ?? list[0]).id);
+        prefetchAll(list); // warm the cache so later switches are instant
       } else await newCourse();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps

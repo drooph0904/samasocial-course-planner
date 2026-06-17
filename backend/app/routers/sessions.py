@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter
 from pydantic import BaseModel
 
@@ -33,13 +35,14 @@ def delete_session(session_id: str):
 
 
 @router.get("/{session_id}")
-def get_session(session_id: str):
+async def get_session(session_id: str):
     store = make_store()
-    session = store.get_session(session_id)
+    # run the three Supabase reads concurrently instead of sequentially
+    session, messages, plan = await asyncio.gather(
+        asyncio.to_thread(store.get_session, session_id),
+        asyncio.to_thread(store.get_messages, session_id),
+        asyncio.to_thread(store.get_plan, session_id),
+    )
     if not session:
         return {"error": "not found"}
-    return {
-        "session": session,
-        "messages": store.get_messages(session_id),
-        "plan": store.get_plan(session_id) or empty_plan(),
-    }
+    return {"session": session, "messages": messages, "plan": plan or empty_plan()}

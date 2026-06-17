@@ -71,8 +71,18 @@ class Store:
         return res.data[0]["plan"] if res.data else None
 
 
-def make_store() -> "Store":
+from functools import lru_cache
+
+
+@lru_cache
+def _client():
     from supabase import create_client
     from app.config import get_settings
     s = get_settings()
-    return Store(create_client(s.supabase_url, s.supabase_service_key))
+    return create_client(s.supabase_url, s.supabase_service_key)
+
+
+def make_store() -> "Store":
+    # reuse one Supabase client across requests (creating one per request
+    # added significant per-call latency)
+    return Store(_client())
