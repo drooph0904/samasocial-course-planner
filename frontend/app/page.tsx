@@ -5,6 +5,7 @@ import { PlanPreview } from "../components/PlanPreview";
 import { Sidebar } from "../components/Sidebar";
 import { ChatMessage, CoursePlan, SessionSummary } from "../lib/types";
 import { useTheme } from "../lib/theme";
+import { courseStats } from "../lib/progress";
 import {
   createSession, getSession, listSessions, deleteSession, deleteSessions,
   patchPlan, chatUrl, syllabusUrl, exportUrl,
@@ -21,28 +22,23 @@ export default function Home() {
   const [searches, setSearches] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [mobilePane, setMobilePane] = useState<"mid" | "right">("mid");
+  const [leftOpen, setLeftOpen] = useState(false);
 
-  const activeIdRef = useRef<string | null>(null);
-  activeIdRef.current = activeId;
-  const busyRef = useRef(false);
-  busyRef.current = busy;
-
-  // ---- session loading -------------------------------------------------------
+  const activeIdRef = useRef<string | null>(null); activeIdRef.current = activeId;
+  const busyRef = useRef(false); busyRef.current = busy;
 
   async function loadSession(id: string) {
-    setActiveId(id);
-    localStorage.setItem("activeSessionId", id);
-    setStreaming(""); setSearches([]); setError(null);
+    setActiveId(id); localStorage.setItem("activeSessionId", id);
+    setStreaming(""); setSearches([]); setError(null); setLeftOpen(false);
     const s = await getSession(id);
     if (s.error) return;
     setMessages(s.messages.map((m: any) => ({ role: m.role, content: m.content })));
     setPlan(s.plan);
   }
-
   async function refreshSessions(): Promise<SessionSummary[]> {
-    const list = await listSessions();
-    setSessions(list);
-    return list;
+    const list = await listSessions(); setSessions(list); return list;
   }
 
   useEffect(() => {
@@ -50,22 +46,16 @@ export default function Home() {
       const list = await refreshSessions();
       if (list.length > 0) {
         const saved = localStorage.getItem("activeSessionId");
-        const pick = list.find((s) => s.id === saved) ?? list[0];
-        await loadSession(pick.id);
-      } else {
-        await newCourse();
-      }
+        await loadSession((list.find((s) => s.id === saved) ?? list[0]).id);
+      } else await newCourse();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ---- keyboard shortcut: Cmd/Ctrl+Shift+O -> new course ---------------------
-
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "o") {
-        e.preventDefault();
-        if (!busyRef.current) newCourse();
+        e.preventDefault(); if (!busyRef.current) newCourse();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -73,38 +63,25 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ---- session actions -------------------------------------------------------
-
   async function newCourse() {
     const created = await createSession();
     setSessions((prev) => [{ id: created.id, title: created.title }, ...prev]);
-    setMessages([]);
-    await loadSession(created.id);
+    setMessages([]); await loadSession(created.id);
   }
-
   async function deleteCourse(id: string) {
     if (!window.confirm("Delete this course? This removes its chat and plan permanently.")) return;
-    await deleteSession(id);
-    await afterRemoval(sessions.filter((s) => s.id !== id), id);
+    await deleteSession(id); await afterRemoval(sessions.filter((s) => s.id !== id));
   }
-
   async function deleteManyCourses(ids: string[]) {
     await deleteSessions(ids);
-    const removed = new Set(ids);
-    await afterRemoval(sessions.filter((s) => !removed.has(s.id)), activeId ?? "");
+    const removed = new Set(ids); await afterRemoval(sessions.filter((s) => !removed.has(s.id)));
   }
-
-  /** Shared cleanup after deleting one or many sessions. */
-  async function afterRemoval(remaining: SessionSummary[], removedActive: string) {
+  async function afterRemoval(remaining: SessionSummary[]) {
     setSessions(remaining);
-    const activeGone = !remaining.some((s) => s.id === activeId);
-    if (activeGone) {
-      if (remaining.length > 0) await loadSession(remaining[0].id);
-      else await newCourse();
+    if (!remaining.some((s) => s.id === activeId)) {
+      if (remaining.length > 0) await loadSession(remaining[0].id); else await newCourse();
     }
   }
-
-  // ---- streaming -------------------------------------------------------------
 
   async function streamFrom(resp: Response) {
     setStreaming(""); setSearches([]); setError(null); setBusy(true);
@@ -115,12 +92,8 @@ export default function Home() {
       else if (event === "plan_update") {
         setPlan(data.plan);
         const title = (data.plan?.title ?? "").trim();
-        if (title) {
-          const id = activeIdRef.current;
-          setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, title } : s)));
-        }
-      }
-      else if (event === "error") setError(data.message);
+        if (title) { const id = activeIdRef.current; setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, title } : s))); }
+      } else if (event === "error") setError(data.message);
     });
     if (acc.trim()) setMessages((m) => [...m, { role: "assistant", content: acc.trim() }]);
     setStreaming(""); setBusy(false);
@@ -129,49 +102,63 @@ export default function Home() {
   async function onSend(text: string) {
     if (!activeId) return;
     setMessages((m) => [...m, { role: "user", content: text }]);
-    const resp = await fetch(chatUrl(activeId), {
-      method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ message: text }),
-    });
-    await streamFrom(resp);
+    setMobilePane("right");
+    await streamFrom(await fetch(chatUrl(activeId), {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ message: text }),
+    }));
   }
-
   async function onImport(file: File) {
     if (!activeId) return;
     const fd = new FormData(); fd.append("file", file);
-    const resp = await fetch(syllabusUrl(activeId), { method: "POST", body: fd });
-    await streamFrom(resp);
+    await streamFrom(await fetch(syllabusUrl(activeId), { method: "POST", body: fd }));
   }
-
   async function onPlanChange(next: CoursePlan) {
     if (!activeId) return;
-    setPlan(next);
-    await patchPlan(activeId, next);
+    setPlan(next); setSaving(true);
+    try { await patchPlan(activeId, next); } finally { setSaving(false); }
   }
 
-  // ---- layout ----------------------------------------------------------------
+  const stats = plan ? courseStats(plan) : null;
+  const hasPlan = !!plan && plan.modules.length > 0;
 
   return (
-    <main style={{ display: "grid", gridTemplateColumns: "260px 1fr 1fr", height: "100vh", background: "var(--bg)" }}>
-      <aside style={{ height: "100vh", overflow: "hidden" }}>
+    <>
+      <header className="topbar">
+        <div className="brand">
+          <button className="icon-btn menu-btn" aria-label="Menu" onClick={() => setLeftOpen((v) => !v)}>☰</button>
+          <div className="mark">S</div>
+          <div><b>Samasocial</b> <span className="sub">Course Planner</span></div>
+        </div>
+        <div className="topbar-center">
+          <div className="mobile-switch">
+            <button className={mobilePane === "mid" ? "active" : ""} onClick={() => setMobilePane("mid")}>Chat</button>
+            <button className={mobilePane === "right" ? "active" : ""} onClick={() => setMobilePane("right")}>Curriculum</button>
+          </div>
+        </div>
+        <div className="topbar-right">
+          <div className="savestate">
+            <span className={`dot ${saving ? "saving" : ""}`} />{saving ? "Saving…" : "Saved"}
+          </div>
+          <button className="icon-btn" onClick={toggleTheme} aria-label="Toggle theme">{theme === "dark" ? "☀" : "☾"}</button>
+          <button className="btn-primary" onClick={() => activeId && window.open(exportUrl(activeId), "_blank")}>⤴ Share</button>
+        </div>
+      </header>
+
+      <div className="shell">
         <Sidebar
-          sessions={sessions} activeId={activeId}
+          open={leftOpen}
+          sessions={sessions} activeId={activeId} activeStats={stats}
           onSelect={(id) => id !== activeId && loadSession(id)}
           onNew={newCourse} onDelete={deleteCourse} onDeleteMany={deleteManyCourses}
-          theme={theme} onToggleTheme={toggleTheme}
         />
-      </aside>
-      <section style={{ borderRight: "1px solid var(--border)", height: "100vh", background: "var(--bg)" }}>
-        <ChatPanel messages={messages} streaming={streaming} searches={searches}
-          busy={busy} error={error} onSend={onSend} />
-      </section>
-      <section style={{ height: "100vh", background: "var(--bg-panel)" }}>
+        <ChatPanel show={mobilePane === "mid"} messages={messages} streaming={streaming}
+          searches={searches} busy={busy} error={error} hasPlan={hasPlan} onSend={onSend} />
         {plan && (
-          <PlanPreview plan={plan} onChange={onPlanChange}
+          <PlanPreview show={mobilePane === "right"} plan={plan} onChange={onPlanChange}
             onExport={() => activeId && window.open(exportUrl(activeId), "_blank")}
             onImport={onImport} />
         )}
-      </section>
-    </main>
+      </div>
+    </>
   );
 }

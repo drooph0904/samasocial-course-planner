@@ -1,76 +1,74 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { ChatMessage } from "../lib/types";
-import { SourceBadges } from "./SourceBadges";
+
+const SUGGESTIONS = [
+  "Add a capstone rubric",
+  "Make the last module harder",
+  "Add a quiz per module",
+  "Suggest prerequisite topics",
+];
 
 export function ChatPanel({
-  messages, streaming, searches, busy, error, onSend,
+  messages, streaming, searches, busy, error, hasPlan, show = true, onSend,
 }: {
   messages: ChatMessage[];
   streaming: string;
   searches: string[];
   busy: boolean;
   error: string | null;
+  hasPlan: boolean;
+  show?: boolean;
   onSend: (text: string) => void;
 }) {
   const [text, setText] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const submit = () => { const t = text.trim(); if (t && !busy) { onSend(t); setText(""); } };
 
-  // keep the conversation pinned to the latest message
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, streaming, searches]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "var(--bg)" }}>
-      <div style={{
-        padding: "12px 16px", borderBottom: "1px solid var(--border)",
-        fontWeight: 700, fontSize: 15, color: "var(--text)", boxShadow: "var(--shadow)",
-      }}>
-        💬 Chat
-      </div>
+    <section className={`pane mid ${show ? "show" : ""}`}>
+      <div className="pane-head"><h2>💬 Chat</h2></div>
 
-      <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", padding: 16 }}>
+      <div className="chat-scroll" ref={scrollRef}>
         {messages.length === 0 && !streaming && (
-          <p style={{ color: "var(--text-faint)", lineHeight: 1.6 }}>
+          <p className="empty-hint">
             👋 Tell me about the course you want to build — subject, who it&apos;s for,
             how long, and your goals.
           </p>
         )}
         {messages.map((m, i) => (
-          <div key={i} style={{ margin: "12px 0", display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
-            <span style={{
-              display: "inline-block", padding: "10px 14px", borderRadius: 14, maxWidth: "82%",
-              fontSize: 14, lineHeight: 1.5,
-              background: m.role === "user" ? "var(--user-bubble)" : "var(--assistant-bubble)",
-              color: m.role === "user" ? "var(--user-bubble-text)" : "var(--assistant-bubble-text)",
-              whiteSpace: "pre-wrap", wordBreak: "break-word",
-            }}>{m.content}</span>
-          </div>
+          <div key={i} className={`msg ${m.role === "user" ? "user" : "ai"}`}>{m.content}</div>
         ))}
-        <SourceBadges searches={searches} />
-        {streaming && (
-          <div style={{ margin: "12px 0", display: "flex", justifyContent: "flex-start" }}>
-            <span style={{
-              display: "inline-block", padding: "10px 14px", borderRadius: 14, maxWidth: "82%",
-              fontSize: 14, lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word",
-              background: "var(--assistant-bubble)", color: "var(--assistant-bubble-text)",
-            }}>{streaming}<span style={{ opacity: 0.6 }}>▌</span></span>
-          </div>
-        )}
-        {error && (
-          <p style={{ color: "var(--danger)", fontSize: 13, marginTop: 8 }}>⚠ {error}</p>
-        )}
+        {searches.length > 0 && searches.map((s, i) => (
+          <div key={`s${i}`} className="action-chip"><span>🔎</span> Searched · {s}</div>
+        ))}
+        {streaming && <div className="msg ai">{streaming}<span style={{ opacity: 0.5 }}>▌</span></div>}
+        {error && <div className="chat-error">⚠ {error}</div>}
       </div>
 
-      <div style={{ display: "flex", gap: 8, padding: 12, borderTop: "1px solid var(--border)" }}>
-        <textarea value={text} onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }}
-          placeholder={busy ? "Thinking…" : "Message the assistant…"} disabled={busy}
-          rows={2} style={{ flex: 1, resize: "none" }} />
-        <button onClick={submit} disabled={busy || !text.trim()}>Send</button>
+      {hasPlan && !busy && (
+        <div className="suggests">
+          {SUGGESTIONS.map((s) => (
+            <button key={s} className="suggest" disabled={busy} onClick={() => onSend(s)}>＋ {s}</button>
+          ))}
+        </div>
+      )}
+
+      <div className="composer">
+        <div className="wrap">
+          <textarea value={text} onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }}
+            placeholder={busy ? "Thinking…" : "Ask for a change, or describe a new course…"}
+            disabled={busy} />
+          <button className="send" aria-label="Send" onClick={submit} disabled={busy || !text.trim()}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+          </button>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

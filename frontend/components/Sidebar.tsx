@@ -1,136 +1,110 @@
 "use client";
-import { useState } from "react";
-import { SessionSummary, Theme } from "../lib/types";
+import { useMemo, useState } from "react";
+import { SessionSummary } from "../lib/types";
 
 function label(s: SessionSummary): string {
   const t = (s.title || "").trim();
-  if (!t || t === "Untitled course") return "New course";
-  return t;
+  return !t || t === "Untitled course" ? "New course" : t;
 }
 
-const shortcutHint =
-  typeof navigator !== "undefined" && /Mac/.test(navigator.platform) ? "⌘⇧O" : "Ctrl+Shift+O";
+const shortcut =
+  typeof navigator !== "undefined" && /Mac/.test(navigator.platform) ? "⌘⇧O" : "Ctrl+⇧O";
+
+const TrashIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2m-9 0v14h10V6" /></svg>
+);
 
 export function Sidebar({
-  sessions, activeId, onSelect, onNew, onDelete, onDeleteMany, theme, onToggleTheme,
+  sessions, activeId, activeStats, open = false, onSelect, onNew, onDelete, onDeleteMany,
 }: {
   sessions: SessionSummary[];
   activeId: string | null;
+  activeStats: { done: number; total: number; pct: number } | null;
+  open?: boolean;
   onSelect: (id: string) => void;
   onNew: () => void;
   onDelete: (id: string) => void;
   onDeleteMany: (ids: string[]) => void;
-  theme: Theme;
-  onToggleTheme: () => void;
 }) {
+  const [query, setQuery] = useState("");
   const [selectMode, setSelectMode] = useState(false);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+
+  const filtered = useMemo(
+    () => sessions.filter((s) => label(s).toLowerCase().includes(query.toLowerCase())),
+    [sessions, query]
+  );
 
   const togglePick = (id: string) =>
-    setSelected((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-
-  const exitSelect = () => { setSelectMode(false); setSelected(new Set()); };
-
-  const allSelected = sessions.length > 0 && selected.size === sessions.length;
-  const toggleAll = () =>
-    setSelected(allSelected ? new Set() : new Set(sessions.map((s) => s.id)));
-
-  const confirmBulk = () => {
-    if (selected.size === 0) return;
-    if (!window.confirm(`Delete ${selected.size} course${selected.size > 1 ? "s" : ""}? This cannot be undone.`)) return;
-    onDeleteMany([...selected]);
-    exitSelect();
+    setPicked((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const exitSelect = () => { setSelectMode(false); setPicked(new Set()); };
+  const allPicked = filtered.length > 0 && filtered.every((s) => picked.has(s.id));
+  const bulk = () => {
+    if (picked.size === 0) return;
+    if (!window.confirm(`Delete ${picked.size} course${picked.size > 1 ? "s" : ""}? This cannot be undone.`)) return;
+    onDeleteMany([...picked]); exitSelect();
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "var(--bg-sidebar)", borderRight: "1px solid var(--border)" }}>
-      {/* header */}
-      <div style={{ padding: "14px 14px 10px", borderBottom: "1px solid var(--border)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-          <span style={{ fontWeight: 700, fontSize: 15, color: "var(--text)" }}>Courses</span>
-          <button className="ghost" onClick={onToggleTheme} title="Toggle theme"
-            style={{ padding: "4px 8px", fontSize: 13 }}>
-            {theme === "dark" ? "☀️" : "🌙"}
-          </button>
-        </div>
+    <aside className={`pane left ${open ? "open" : ""}`}>
+      <div className="pane-head"><h2>Courses</h2></div>
 
-        {!selectMode ? (
-          <>
-            <button onClick={onNew} style={{ width: "100%", display: "flex", justifyContent: "center", gap: 6 }}>
-              + New course <kbd style={{ background: "rgba(0,0,0,0.25)", borderColor: "transparent", color: "inherit" }}>{shortcutHint}</kbd>
-            </button>
-            <button className="ghost" onClick={() => setSelectMode(true)}
-              disabled={sessions.length === 0}
-              style={{ width: "100%", marginTop: 8, fontSize: 13 }}>
-              Select
-            </button>
-          </>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button className="ghost" onClick={toggleAll} style={{ flex: 1, fontSize: 13 }}>
-                {allSelected ? "Clear all" : "Select all"}
-              </button>
-              <button className="ghost" onClick={exitSelect} style={{ flex: 1, fontSize: 13 }}>
-                Cancel
-              </button>
-            </div>
-            <button className="danger" onClick={confirmBulk} disabled={selected.size === 0}
-              style={{ width: "100%", fontSize: 13 }}>
-              🗑 Delete selected ({selected.size})
-            </button>
-          </div>
-        )}
+      <div className="search">
+        <span className="ic">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="m20 20-3-3" /></svg>
+        </span>
+        <input placeholder="Search courses…" value={query} onChange={(e) => setQuery(e.target.value)} />
       </div>
 
-      {/* list */}
-      <div style={{ flex: 1, overflowY: "auto", padding: 8 }}>
-        {sessions.length === 0 && (
-          <p style={{ color: "var(--text-faint)", fontSize: 13, padding: 8 }}>No courses yet.</p>
-        )}
-        {sessions.map((s) => {
+      {selectMode ? (
+        <div className="select-bar">
+          <button onClick={() => setPicked(allPicked ? new Set() : new Set(filtered.map((s) => s.id)))}>
+            {allPicked ? "Clear" : "All"}
+          </button>
+          <button onClick={exitSelect}>Cancel</button>
+          <button className="danger" onClick={bulk} disabled={picked.size === 0}>Delete ({picked.size})</button>
+        </div>
+      ) : (
+        <div className="filters">
+          <button className="chip" onClick={() => sessions.length && setSelectMode(true)}>Select</button>
+        </div>
+      )}
+
+      <div className="body">
+        {filtered.length === 0 && <p style={{ color: "var(--text-muted)", fontSize: 13, padding: 8 }}>No courses.</p>}
+        {filtered.map((s) => {
           const active = !selectMode && s.id === activeId;
-          const picked = selected.has(s.id);
+          const isPicked = picked.has(s.id);
+          const showBar = active && activeStats;
           return (
             <div
               key={s.id}
+              className={`course-card ${active ? "active" : ""} ${isPicked ? "picked" : ""}`}
               onClick={() => (selectMode ? togglePick(s.id) : onSelect(s.id))}
-              style={{
-                display: "flex", alignItems: "center", gap: 8,
-                padding: "9px 10px", marginBottom: 2, borderRadius: 8, cursor: "pointer",
-                background: active || picked ? "var(--bg-hover)" : "transparent",
-                color: active ? "var(--text)" : "var(--text-muted)",
-                border: picked ? "1px solid var(--accent)" : "1px solid transparent",
-              }}
-              onMouseEnter={(e) => { if (!active && !picked) e.currentTarget.style.background = "var(--bg-hover)"; }}
-              onMouseLeave={(e) => { if (!active && !picked) e.currentTarget.style.background = "transparent"; }}
             >
-              {selectMode && (
-                <input type="checkbox" checked={picked} readOnly
-                  style={{ width: 15, height: 15, accentColor: "var(--accent)", padding: 0 }} />
+              {selectMode ? (
+                <input className="pick" type="checkbox" checked={isPicked} readOnly />
+              ) : (
+                <button className="del" aria-label="Delete course"
+                  onClick={(e) => { e.stopPropagation(); onDelete(s.id); }}>
+                  <TrashIcon />
+                </button>
               )}
-              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 14 }}>
-                {label(s)}
-              </span>
-              {!selectMode && (
-                <button
-                  title="Delete course"
-                  onClick={(e) => { e.stopPropagation(); onDelete(s.id); }}
-                  style={{ background: "transparent", color: "var(--text-faint)", padding: "2px 6px", fontSize: 13 }}
-                >🗑</button>
+              <div className="ct">{label(s)}</div>
+              {showBar && (
+                <>
+                  <div className="bar"><i style={{ width: `${activeStats!.pct}%` }} /></div>
+                  <div className="pct">{activeStats!.pct}% · {activeStats!.done} of {activeStats!.total} lessons</div>
+                </>
               )}
             </div>
           );
         })}
       </div>
 
-      <div style={{ padding: 12, borderTop: "1px solid var(--border)", fontSize: 11, color: "var(--text-faint)" }}>
-        Samasocial · Course Planner
-      </div>
-    </div>
+      <button className="new-course" onClick={onNew}>
+        ＋ New course <span className="kbd">{shortcut}</span>
+      </button>
+    </aside>
   );
 }
