@@ -24,19 +24,34 @@ export default function Home() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [mobilePane, setMobilePane] = useState<"mid" | "right">("mid");
   const [leftOpen, setLeftOpen] = useState(false);
 
   const activeIdRef = useRef<string | null>(null); activeIdRef.current = activeId;
   const busyRef = useRef(false); busyRef.current = busy;
+  // in-memory cache of loaded courses so re-visiting is instant
+  const cacheRef = useRef<Map<string, { messages: ChatMessage[]; plan: CoursePlan }>>(new Map());
 
   async function loadSession(id: string) {
     setActiveId(id); localStorage.setItem("activeSessionId", id);
     setStreaming(""); setSearches([]); setError(null); setLeftOpen(false);
+
+    const cached = cacheRef.current.get(id);
+    if (cached) {
+      setMessages(cached.messages); setPlan(cached.plan); setLoading(false);
+    } else {
+      // blank immediately so the new selection never shows the previous course's progress
+      setMessages([]); setPlan(null); setLoading(true);
+    }
+
     const s = await getSession(id);
+    if (id !== activeIdRef.current) return; // user switched again mid-fetch
+    setLoading(false);
     if (s.error) return;
-    setMessages(s.messages.map((m: any) => ({ role: m.role, content: m.content })));
-    setPlan(s.plan);
+    const msgs: ChatMessage[] = s.messages.map((m: any) => ({ role: m.role, content: m.content }));
+    setMessages(msgs); setPlan(s.plan);
+    cacheRef.current.set(id, { messages: msgs, plan: s.plan });
   }
   async function refreshSessions(): Promise<SessionSummary[]> {
     const list = await listSessions(); setSessions(list); return list;
@@ -52,6 +67,11 @@ export default function Home() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // keep the cache in sync with edits/streaming on the active course
+  useEffect(() => {
+    if (activeId && plan) cacheRef.current.set(activeId, { messages, plan });
+  }, [activeId, plan, messages]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -162,9 +182,13 @@ export default function Home() {
         />
         <ChatPanel show={mobilePane === "mid"} messages={messages} streaming={streaming}
           searches={searches} busy={busy} error={error} hasPlan={hasPlan} onSend={onSend} />
-        {plan && (
+        {plan ? (
           <PlanPreview show={mobilePane === "right"} plan={plan}
             onChange={onPlanChange} onExport={onExport} onImport={onImport} />
+        ) : (
+          <section className={`pane right ${mobilePane === "right" ? "show" : ""}`}>
+            <div className="empty-curr">{loading ? "Loading course…" : ""}</div>
+          </section>
         )}
       </div>
     </>
