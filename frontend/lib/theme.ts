@@ -8,7 +8,10 @@ export function useTheme(): [Theme, () => void] {
   const [theme, setTheme] = useState<Theme>("dark");
 
   useEffect(() => {
+    // Sync the persisted choice on mount. Reading localStorage during render
+    // would cause an SSR/client hydration mismatch, so this must run in an effect.
     const saved = (localStorage.getItem("theme") as Theme | null) ?? "dark";
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(saved);
     document.documentElement.classList.toggle("theme-light", saved === "light");
   }, []);

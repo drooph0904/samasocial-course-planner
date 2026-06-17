@@ -1,9 +1,9 @@
 "use client";
-import { memo, useState } from "react";
+import React, { memo, useState } from "react";
 import { CoursePlan, Lesson, Module, Resource } from "../lib/types";
 import { EditableField } from "./EditableField";
 import { moduleStats, courseStats, nextUpKey, currentModule } from "../lib/progress";
-import { IUsers, ICalendar, ILayers, IClipboard, IUpload, IDownload, ITrash } from "./icons";
+import { IUsers, ICalendar, ILayers, IClipboard, IUpload, IDownload, ITrash, ILink } from "./icons";
 
 const Check = () => (
   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><path d="M20 6 9 17l-5-5" /></svg>
@@ -35,7 +35,7 @@ export const PlanPreview = memo(function PlanPreview({
     mutate(copy); onChange(copy);
   };
   const toggleCollapse = (mi: number) =>
-    setCollapsed((prev) => { const n = new Set(prev); n.has(mi) ? n.delete(mi) : n.add(mi); return n; });
+    setCollapsed((prev) => { const n = new Set(prev); if (n.has(mi)) n.delete(mi); else n.add(mi); return n; });
   const allCollapsed = plan.modules.length > 0 && collapsed.size === plan.modules.length;
   const toggleAll = () =>
     setCollapsed(allCollapsed ? new Set() : new Set(plan.modules.map((_, i) => i)));
@@ -83,11 +83,11 @@ export const PlanPreview = memo(function PlanPreview({
               </div>
 
               {stats.total > 0 && <div className="progress-block">
-                <div className="ring" style={{ ["--p" as any]: stats.pct }}>
+                <div className="ring" style={{ "--p": stats.pct } as React.CSSProperties}>
                   <div className="inner">{stats.pct}%</div>
                 </div>
                 <div className="progress-meta">
-                  <div className="h">{cur ? `You're on Module ${cur.index} — ${cur.title}` : (stats.total ? "Course complete 🎉" : "No lessons yet")}</div>
+                  <div className="h">{cur ? `You're on Module ${cur.index} — ${cur.title}` : (stats.total ? "Course complete" : "No lessons yet")}</div>
                   <div className="s">{stats.done} of {stats.total} lessons done · {stats.remaining} remaining</div>
                 </div>
                 <div className="progress-stats">
@@ -188,25 +188,39 @@ export const PlanPreview = memo(function PlanPreview({
                                   <span className="ltitle">
                                     <EditableField value={l.title} onSave={(v) => set((d) => { d.modules[mi].lessons[li].title = v; })} />
                                   </span>
-                                  <span className={`status ${statusCls}`}>{statusTxt}</span>
                                   <span className="ldel" title="Delete lesson"
                                     onClick={() => set((d) => { d.modules[mi].lessons.splice(li, 1); })}><ITrash /></span>
                                 </div>
+                                <div className="lstatus"><span className={`status ${statusCls}`}>{statusTxt}</span></div>
                                 <div className="ltopics">
                                   <EditableField value={l.topics.join(" · ")} placeholder="add topics"
                                     onSave={(v) => set((d) => { d.modules[mi].lessons[li].topics = v.split("·").map((s) => s.trim()).filter(Boolean); })} />
                                 </div>
                                 <div className="lresources">
-                                  {l.resources.map((r, ri) => (
-                                    <a key={ri} className="res" href={r.url} target="_blank" rel="noreferrer"
-                                      onClick={(e) => { if (r.url === "https://") e.preventDefault(); }}>
-                                      {r.title} <span className="src">{r.source || r.type}</span>
-                                      <span className="del-inline" title="Remove"
-                                        onClick={(e) => { e.preventDefault(); set((d) => { d.modules[mi].lessons[li].resources.splice(ri, 1); }); }}>✕</span>
-                                    </a>
-                                  ))}
-                                  <span className="add-inline" style={{ marginTop: 0 }}
-                                    onClick={() => set((d) => { d.modules[mi].lessons[li].resources.push(newResource()); })}>＋ resource</span>
+                                  {l.resources.map((r, ri) => {
+                                    const valid = !!r.url && r.url !== "https://";
+                                    return (
+                                      <div key={ri} className="res-item">
+                                        <ILink />
+                                        <span className="res-title">
+                                          <EditableField value={r.title} placeholder="title"
+                                            onSave={(v) => set((d) => { d.modules[mi].lessons[li].resources[ri].title = v; })} />
+                                        </span>
+                                        <span className="res-url mono">
+                                          <EditableField value={r.url} placeholder="https://…"
+                                            onSave={(v) => set((d) => {
+                                              d.modules[mi].lessons[li].resources[ri].url = v;
+                                              try { d.modules[mi].lessons[li].resources[ri].source = new URL(v).hostname.replace(/^www\./, ""); } catch {}
+                                            })} />
+                                        </span>
+                                        {valid && <a className="res-open" href={r.url} target="_blank" rel="noreferrer" title="Open link">↗</a>}
+                                        <span className="del-inline" title="Remove resource"
+                                          onClick={() => set((d) => { d.modules[mi].lessons[li].resources.splice(ri, 1); })}>✕</span>
+                                      </div>
+                                    );
+                                  })}
+                                  <span className="add-inline" style={{ marginTop: l.resources.length ? 6 : 0 }}
+                                    onClick={() => set((d) => { d.modules[mi].lessons[li].resources.push(newResource()); })}>＋ Add resource</span>
                                 </div>
                               </div>
                             </div>

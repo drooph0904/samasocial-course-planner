@@ -20,6 +20,7 @@ export const ISparkle = () => <S><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2 2
 export const ISun = () => <S><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19" /></S>;
 export const IMoon = () => <S><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></S>;
 export const ISend = () => <S><path d="M5 12h14M13 6l6 6-6 6" /></S>;
+export const ILink = () => <S size={13}><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" /></S>;
 export const ICheck = ({ size = 11 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
 );

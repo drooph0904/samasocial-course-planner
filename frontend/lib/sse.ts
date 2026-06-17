@@ -1,4 +1,10 @@
-export type SSEHandler = (event: string, data: any) => void;
+export type SSEData = {
+  text?: string;
+  searches?: string[];
+  plan?: unknown;
+  message?: string;
+};
+export type SSEHandler = (event: string, data: SSEData) => void;
 
 /** Reads an SSE stream from a fetch Response body and dispatches named events. */
 export async function readSSE(resp: Response, onEvent: SSEHandler): Promise<void> {

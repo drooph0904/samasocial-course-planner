@@ -36,7 +36,7 @@ export function Sidebar({
   );
 
   const togglePick = (id: string) =>
-    setPicked((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    setPicked((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const exitSelect = () => { setSelectMode(false); setPicked(new Set()); };
   const allPicked = filtered.length > 0 && filtered.every((s) => picked.has(s.id));
   const bulk = () => {

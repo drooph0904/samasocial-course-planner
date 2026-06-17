@@ -49,7 +49,7 @@ export default function Home() {
     if (id !== activeIdRef.current) return; // user switched again mid-fetch
     setLoading(false);
     if (s.error) return;
-    const msgs: ChatMessage[] = s.messages.map((m: any) => ({ role: m.role, content: m.content }));
+    const msgs: ChatMessage[] = s.messages.map((m: { role: ChatMessage["role"]; content: string }) => ({ role: m.role, content: m.content }));
     setMessages(msgs); setPlan(s.plan);
     cacheRef.current.set(id, { messages: msgs, plan: s.plan });
   }
@@ -62,7 +62,7 @@ export default function Home() {
       if (cacheRef.current.has(s.id)) continue;
       getSession(s.id).then((data) => {
         if (!data?.error) cacheRef.current.set(s.id, {
-          messages: (data.messages || []).map((m: any) => ({ role: m.role, content: m.content })),
+          messages: (data.messages || []).map((m: { role: ChatMessage["role"]; content: string }) => ({ role: m.role, content: m.content })),
           plan: data.plan,
         });
       }).catch(() => {});
@@ -78,7 +78,6 @@ export default function Home() {
         prefetchAll(list); // warm the cache so later switches are instant
       } else await newCourse();
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // keep the cache in sync with edits/streaming on the active course
@@ -94,7 +93,6 @@ export default function Home() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function newCourse() {
@@ -124,13 +122,15 @@ export default function Home() {
     setStreaming(""); setSearches([]); setError(null); setBusy(true);
     let acc = "";
     await readSSE(resp, (event, data) => {
-      if (event === "token") { acc += data.text; setStreaming(acc); }
-      else if (event === "sources") setSearches((p) => [...p, ...data.searches]);
+      if (event === "token") { acc += data.text ?? ""; setStreaming(acc); }
+      else if (event === "sources") setSearches((p) => [...p, ...(data.searches ?? [])]);
       else if (event === "plan_update") {
-        setPlan(data.plan);
-        const title = (data.plan?.title ?? "").trim();
+        const p = data.plan as CoursePlan | undefined;
+        if (!p) return;
+        setPlan(p);
+        const title = (p.title ?? "").trim();
         if (title) { const id = activeIdRef.current; setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, title } : s))); }
-      } else if (event === "error") setError(data.message);
+      } else if (event === "error") setError(data.message ?? "Something went wrong");
     });
     if (acc.trim()) setMessages((m) => [...m, { role: "assistant", content: acc.trim() }]);
     setStreaming(""); setBusy(false);
