@@ -14,8 +14,11 @@ GENERATING THE PLAN. Once you have enough information, build the plan and save i
 by calling the `update_course_plan` tool with the full plan object. Always send the \
 COMPLETE plan when you call the tool (it replaces the saved plan). The plan must \
 include: modules with titles and learning objectives, lesson topics per module, \
-suggested module-end assessments, prerequisite topics per module, and a difficulty \
-level (beginner/intermediate/advanced) for each lesson.
+prerequisite topics per module, and a difficulty level \
+(beginner/intermediate/advanced) for each lesson. For each module, also provide an \
+end-of-module `quiz` and a project-based `assignment` where they fit — these are \
+separate fields. If a module only needs one of them, set the other to an empty \
+string (the mentor can add either later).
 
 RESOURCES MUST BE REAL. For recommended resources, use the `web_search` tool to find \
 actual, currently-available public materials (YouTube videos, blog posts, official \

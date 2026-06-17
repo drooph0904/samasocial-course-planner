@@ -11,7 +11,8 @@ SAMPLE = {
         "title": "Basics",
         "objectives": ["Variables and types"],
         "prerequisites": ["Computer literacy"],
-        "assessment": "Quiz on syntax",
+        "quiz": "10-question syntax quiz",
+        "assignment": "Build a tip calculator",
         "lessons": [{
             "title": "Variables",
             "topics": ["int", "str"],

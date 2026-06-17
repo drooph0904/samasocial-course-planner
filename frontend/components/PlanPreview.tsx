@@ -3,7 +3,7 @@ import React, { memo, useState } from "react";
 import { CoursePlan, Lesson, Module, Resource } from "../lib/types";
 import { EditableField } from "./EditableField";
 import { moduleStats, courseStats, nextUpKey, currentModule } from "../lib/progress";
-import { IUsers, ICalendar, ILayers, IClipboard, IUpload, IDownload, ITrash, ILink } from "./icons";
+import { IUsers, ICalendar, ILayers, IClipboard, IUpload, IDownload, ITrash, ILink, IAward } from "./icons";
 
 const Check = () => (
   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><path d="M20 6 9 17l-5-5" /></svg>
@@ -13,7 +13,7 @@ function newLesson(): Lesson {
   return { title: "New lesson", topics: [], difficulty: "beginner", resources: [], done: false };
 }
 function newModule(n: number): Module {
-  return { title: `Module ${n}`, objectives: [], prerequisites: [], assessment: "", lessons: [newLesson()] };
+  return { title: `Module ${n}`, objectives: [], prerequisites: [], quiz: "", assignment: "", lessons: [newLesson()] };
 }
 function newResource(): Resource {
   return { title: "New resource", url: "https://", type: "docs", source: "" };
@@ -231,13 +231,40 @@ export const PlanPreview = memo(function PlanPreview({
                           ＋ Add lesson
                         </div>
 
-                        <div className="assessment">
-                          <IClipboard />
-                          <div><b>Assessment:</b>{" "}
-                            <EditableField value={m.assessment} placeholder="add an assessment"
-                              onSave={(v) => set((d) => { d.modules[mi].assessment = v; })} />
-                          </div>
-                        </div>
+                        {(() => {
+                          const quiz = m.quiz ?? "";
+                          const assignment = m.assignment ?? m.assessment ?? "";
+                          return (
+                            <div className="assess-group">
+                              {quiz && (
+                                <div className="assessment quiz">
+                                  <IClipboard />
+                                  <div style={{ flex: 1 }}><b>Quiz:</b>{" "}
+                                    <EditableField value={quiz} multiline placeholder="quiz details"
+                                      onSave={(v) => set((d) => { d.modules[mi].quiz = v; })} />
+                                  </div>
+                                  <span className="del-inline" title="Remove quiz"
+                                    onClick={() => set((d) => { d.modules[mi].quiz = ""; })}>✕</span>
+                                </div>
+                              )}
+                              {assignment && (
+                                <div className="assessment assignment">
+                                  <IAward />
+                                  <div style={{ flex: 1 }}><b>Assignment:</b>{" "}
+                                    <EditableField value={assignment} multiline placeholder="assignment details"
+                                      onSave={(v) => set((d) => { d.modules[mi].assignment = v; })} />
+                                  </div>
+                                  <span className="del-inline" title="Remove assignment"
+                                    onClick={() => set((d) => { d.modules[mi].assignment = ""; })}>✕</span>
+                                </div>
+                              )}
+                              <div className="assess-add">
+                                {!quiz && <span className="add-inline" onClick={() => set((d) => { d.modules[mi].quiz = "Add quiz details…"; })}>＋ Add quiz</span>}
+                                {!assignment && <span className="add-inline" onClick={() => set((d) => { d.modules[mi].assignment = "Add assignment details…"; })}>＋ Add assignment</span>}
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>

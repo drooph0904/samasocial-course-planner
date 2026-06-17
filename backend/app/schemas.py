@@ -29,7 +29,8 @@ class Module(BaseModel):
     title: str
     objectives: list[str]
     prerequisites: list[str]
-    assessment: str
+    quiz: str = ""          # end-of-module quiz (empty = none)
+    assignment: str = ""    # project-based assignment (empty = none)
     lessons: list[Lesson]
 
 
@@ -92,7 +93,8 @@ _MODULE = _obj({
     "title": {"type": "string"},
     "objectives": {"type": "array", "items": {"type": "string"}},
     "prerequisites": {"type": "array", "items": {"type": "string"}},
-    "assessment": {"type": "string"},
+    "quiz": {"type": "string"},
+    "assignment": {"type": "string"},
     "lessons": {"type": "array", "items": _LESSON},
 })
 

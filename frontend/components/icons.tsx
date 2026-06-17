@@ -21,6 +21,7 @@ export const ISun = () => <S><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12
 export const IMoon = () => <S><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></S>;
 export const ISend = () => <S><path d="M5 12h14M13 6l6 6-6 6" /></S>;
 export const ILink = () => <S size={13}><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" /></S>;
+export const IAward = () => <S><circle cx="12" cy="8" r="6" /><path d="M8.2 13.9 7 22l5-3 5 3-1.2-8.1" /></S>;
 export const ICheck = ({ size = 11 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
 );

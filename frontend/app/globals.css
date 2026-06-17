@@ -329,8 +329,18 @@ input, textarea { font-family: inherit; }
 .status.prog { background: var(--prog-soft); color: var(--prog); }
 .status.idle { background: var(--idle-soft); color: var(--idle); }
 
-.assessment { margin-top: 12px; padding: 12px 14px; border-radius: var(--radius-sm); background: var(--prog-soft); border: 1px dashed var(--prog); font-size: 12.5px; color: var(--text); display: flex; gap: 10px; }
-.assessment b { color: var(--prog); }
+.assess-group { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.assessment { padding: 12px 14px; border-radius: var(--radius-sm); font-size: 12.5px; color: var(--text); display: flex; gap: 10px; align-items: flex-start; }
+.assessment.quiz { background: var(--prog-soft); border: 1px dashed var(--prog); }
+.assessment.quiz b { color: var(--prog); }
+.assessment.quiz svg { color: var(--prog); }
+.assessment.assignment { background: var(--accent-soft); border: 1px dashed var(--accent); }
+.assessment.assignment b { color: var(--accent-text); }
+.assessment.assignment svg { color: var(--accent-text); }
+.assessment svg { flex-shrink: 0; margin-top: 1px; }
+.assessment .del-inline { opacity: .6; flex-shrink: 0; }
+.assessment:hover .del-inline { opacity: 1; }
+.assess-add { display: flex; flex-wrap: wrap; gap: 10px; }
 
 .lesson-add { display: flex; align-items: center; gap: 9px; padding: 9px 12px; font-size: 12.5px; color: var(--text-muted); border-radius: var(--radius-sm); border: 1px dashed transparent; transition: .14s; cursor: pointer; }
 .lesson-add:hover { color: var(--accent-text); border-color: var(--line); }
