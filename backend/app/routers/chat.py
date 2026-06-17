@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from app.config import get_settings
 from app.services.store import make_store
-from app.services.claude_service import run_turn, make_client
+from app.services.llm_service import run_turn, make_client
 from app.sse import sse_event
 
 router = APIRouter(prefix="/api/sessions", tags=["chat"])

@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-REQUIRED = ["ANTHROPIC_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_KEY"]
+REQUIRED = ["OPENAI_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_KEY"]
 
 
 class Settings:
@@ -17,8 +17,9 @@ class Settings:
                 f"Missing required environment variables: {', '.join(missing)}. "
                 f"Copy backend/.env.example to backend/.env and fill them in."
             )
-        self.anthropic_api_key = os.environ["ANTHROPIC_API_KEY"]
-        self.model = os.getenv("ANTHROPIC_MODEL", "claude-opus-4-8")
+        self.openai_api_key = os.environ["OPENAI_API_KEY"]
+        # web_search (Responses API) requires a GPT-5+ model
+        self.model = os.getenv("OPENAI_MODEL", "gpt-5.4")
         self.supabase_url = os.environ["SUPABASE_URL"]
         self.supabase_service_key = os.environ["SUPABASE_SERVICE_KEY"]
         self.frontend_origin = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
