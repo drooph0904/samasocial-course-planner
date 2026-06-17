@@ -8,7 +8,9 @@ app = FastAPI(title="Samasocial Course Planner")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[get_settings().frontend_origin],
+    allow_origins=get_settings().frontend_origins,
+    # also accept Vercel preview deployments (https://<project>-<hash>.vercel.app)
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_methods=["*"],
     allow_headers=["*"],
 )

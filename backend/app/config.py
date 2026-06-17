@@ -22,7 +22,10 @@ class Settings:
         self.model = os.getenv("OPENAI_MODEL", "gpt-5.4")
         self.supabase_url = os.environ["SUPABASE_URL"]
         self.supabase_service_key = os.environ["SUPABASE_SERVICE_KEY"]
-        self.frontend_origin = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
+        # comma-separated list of allowed CORS origins (prod can list the Vercel URL)
+        self.frontend_origins = [
+            o.strip() for o in os.getenv("FRONTEND_ORIGIN", "http://localhost:3000").split(",") if o.strip()
+        ]
 
 
 @lru_cache

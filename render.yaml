@@ -1,0 +1,27 @@
+# Render Blueprint for the FastAPI backend.
+# In Render: New + → Blueprint → connect this repo. It reads this file.
+# Set the secret env vars (marked sync:false) in the Render dashboard after creation.
+services:
+  - type: web
+    name: samasocial-course-planner-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: PYTHONPATH
+        value: "."
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-5.4
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: FRONTEND_ORIGIN
+        sync: false   # set to your Vercel URL, e.g. https://your-app.vercel.app
