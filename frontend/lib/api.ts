@@ -1,13 +1,23 @@
-import { CoursePlan } from "./types";
+import { CoursePlan, SessionSummary } from "./types";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
 
-export async function createSession(title = "Untitled course") {
+export async function createSession(title = "New course") {
   const r = await fetch(`${BASE}/api/sessions`, {
     method: "POST", headers: { "content-type": "application/json" },
     body: JSON.stringify({ title }),
   });
   return r.json() as Promise<{ id: string; title: string }>;
+}
+
+export async function listSessions() {
+  const r = await fetch(`${BASE}/api/sessions`);
+  const d = await r.json();
+  return (d.sessions ?? []) as SessionSummary[];
+}
+
+export async function deleteSession(id: string) {
+  await fetch(`${BASE}/api/sessions/${id}`, { method: "DELETE" });
 }
 
 export async function getSession(id: string) {

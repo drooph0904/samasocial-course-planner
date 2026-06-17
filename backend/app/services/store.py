@@ -24,6 +24,20 @@ class Store:
         res = self._c.table("sessions").select("*").eq("id", session_id).execute()
         return res.data[0] if res.data else None
 
+    def list_sessions(self) -> list[dict]:
+        res = (
+            self._c.table("sessions").select("*")
+            .order("created_at", desc=True).execute()
+        )
+        return res.data or []
+
+    def update_session_title(self, session_id: str, title: str) -> None:
+        self._c.table("sessions").update({"title": title}).eq("id", session_id).execute()
+
+    def delete_session(self, session_id: str) -> None:
+        # messages + plans cascade-delete via FK (see supabase/schema.sql)
+        self._c.table("sessions").delete().eq("id", session_id).execute()
+
     def add_message(self, session_id: str, role: str, content: Any) -> None:
         self._c.table("messages").insert({
             "id": str(uuid.uuid4()),

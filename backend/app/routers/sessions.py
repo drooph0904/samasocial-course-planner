@@ -19,6 +19,19 @@ def create_session(body: CreateSession):
     return {"id": sid, "title": body.title}
 
 
+@router.get("")
+def list_sessions():
+    store = make_store()
+    return {"sessions": store.list_sessions()}
+
+
+@router.delete("/{session_id}")
+def delete_session(session_id: str):
+    store = make_store()
+    store.delete_session(session_id)
+    return {"deleted": session_id}
+
+
 @router.get("/{session_id}")
 def get_session(session_id: str):
     store = make_store()

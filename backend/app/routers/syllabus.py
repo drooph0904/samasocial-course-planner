@@ -36,6 +36,9 @@ async def import_syllabus(session_id: str, file: UploadFile = File(...)):
 
     async def save_plan(plan: dict) -> None:
         store.save_plan(session_id, plan)
+        title = (plan.get("title") or "").strip()
+        if title:
+            store.update_session_title(session_id, title)
 
     async def event_stream():
         assistant_text = []

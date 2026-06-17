@@ -27,6 +27,10 @@ async def chat(session_id: str, body: ChatBody):
 
     async def save_plan(plan: dict) -> None:
         store.save_plan(session_id, plan)
+        # keep the session label in sync with the course title
+        title = (plan.get("title") or "").strip()
+        if title:
+            store.update_session_title(session_id, title)
 
     async def event_stream():
         assistant_text: list[str] = []

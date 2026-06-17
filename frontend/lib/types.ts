@@ -12,3 +12,4 @@ export interface CoursePlan {
   modules: Module[];
 }
 export interface ChatMessage { role: "user" | "assistant"; content: string; }
+export interface SessionSummary { id: string; title: string; created_at?: string; }

@@ -5,6 +5,7 @@ class FakeTable:
     def insert(self, payload): self._op=("insert", payload); return self
     def upsert(self, payload, **kw): self._op=("upsert", payload); return self
     def update(self, payload): self._op=("update", payload); return self
+    def delete(self): self._op=("delete", None); return self
     def select(self, *_a): self._op=("select", None); return self
     def eq(self, col, val): self._filter=(col, val); return self
     def order(self, *_a, **_k): return self
@@ -17,7 +18,22 @@ class FakeTable:
         if op == "upsert":
             rows[:] = [r for r in rows if r.get("session_id") != payload.get("session_id")]
             rows.append(payload); return type("R", (), {"data": [payload]})
+        if op == "update":
+            col, val = self._filter
+            updated = []
+            for r in rows:
+                if r.get(col) == val:
+                    r.update(payload); updated.append(r)
+            return type("R", (), {"data": updated})
+        if op == "delete":
+            col, val = self._filter
+            kept = [r for r in rows if r.get(col) != val]
+            removed = [r for r in rows if r.get(col) == val]
+            rows[:] = kept
+            return type("R", (), {"data": removed})
         if op == "select":
+            if self._filter is None:
+                return type("R", (), {"data": list(rows)})
             col, val = self._filter
             data = [r for r in rows if r.get(col) == val]
             return type("R", (), {"data": data})
@@ -48,3 +64,23 @@ def test_plan_upsert_replaces():
     store.save_plan(sid, {"title": "v1"})
     store.save_plan(sid, {"title": "v2"})
     assert store.get_plan(sid)["title"] == "v2"
+
+def test_list_sessions_returns_all():
+    store = Store(FakeClient())
+    store.create_session("A")
+    store.create_session("B")
+    titles = {s["title"] for s in store.list_sessions()}
+    assert titles == {"A", "B"}
+
+def test_update_session_title():
+    store = Store(FakeClient())
+    sid = store.create_session("New course")
+    store.update_session_title(sid, "Intro to Python")
+    assert store.get_session(sid)["title"] == "Intro to Python"
+
+def test_delete_session_removes_it():
+    store = Store(FakeClient())
+    sid = store.create_session("Doomed")
+    store.delete_session(sid)
+    assert store.get_session(sid) is None
+    assert store.list_sessions() == []
