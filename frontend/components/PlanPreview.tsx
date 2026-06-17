@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { CoursePlan, Lesson, Module, Resource } from "../lib/types";
 import { EditableField } from "./EditableField";
 import { moduleStats, courseStats, nextUpKey, currentModule } from "../lib/progress";
@@ -19,7 +19,7 @@ function newResource(): Resource {
   return { title: "New resource", url: "https://", type: "docs", source: "" };
 }
 
-export function PlanPreview({
+export const PlanPreview = memo(function PlanPreview({
   plan, onChange, onExport, onImport, show = true,
 }: {
   plan: CoursePlan;
@@ -82,7 +82,7 @@ export function PlanPreview({
                 <span className="meta-pill"><ILayers /> <span className="mono">{plan.modules.length}</span> modules · <span className="mono">{stats.total}</span> lessons</span>
               </div>
 
-              <div className="progress-block">
+              {stats.total > 0 && <div className="progress-block">
                 <div className="ring" style={{ ["--p" as any]: stats.pct }}>
                   <div className="inner">{stats.pct}%</div>
                 </div>
@@ -94,7 +94,7 @@ export function PlanPreview({
                   <div className="pstat"><div className="n">{stats.done}</div><div className="l">Done</div></div>
                   <div className="pstat"><div className="n">{stats.remaining}</div><div className="l">Remaining</div></div>
                 </div>
-              </div>
+              </div>}
             </>
           )}
         </div>
@@ -239,4 +239,4 @@ export function PlanPreview({
       </div>
     </section>
   );
-}
+});

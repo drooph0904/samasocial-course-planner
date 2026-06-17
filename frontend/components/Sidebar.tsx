@@ -75,7 +75,7 @@ export function Sidebar({
         {filtered.map((s) => {
           const active = !selectMode && s.id === activeId;
           const isPicked = picked.has(s.id);
-          const showBar = active && activeStats;
+          const showBar = active && activeStats && activeStats.total > 0;
           return (
             <div
               key={s.id}

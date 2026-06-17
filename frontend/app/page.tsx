@@ -1,11 +1,11 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChatPanel } from "../components/ChatPanel";
 import { PlanPreview } from "../components/PlanPreview";
 import { Sidebar } from "../components/Sidebar";
 import { ChatMessage, CoursePlan, SessionSummary } from "../lib/types";
 import { useTheme } from "../lib/theme";
-import { courseStats } from "../lib/progress";
+import { courseStats, emptyPlan } from "../lib/progress";
 import { ISun, IMoon, IShare } from "../components/icons";
 import {
   createSession, getSession, listSessions, deleteSession, deleteSessions,
@@ -66,8 +66,11 @@ export default function Home() {
 
   async function newCourse() {
     const created = await createSession();
+    // optimistic: a new course has empty chat + empty plan, so skip the re-fetch
     setSessions((prev) => [{ id: created.id, title: created.title }, ...prev]);
-    setMessages([]); await loadSession(created.id);
+    setActiveId(created.id); localStorage.setItem("activeSessionId", created.id);
+    setMessages([]); setPlan(emptyPlan());
+    setStreaming(""); setSearches([]); setError(null); setLeftOpen(false);
   }
   async function deleteCourse(id: string) {
     if (!window.confirm("Delete this course? This removes its chat and plan permanently.")) return;
@@ -108,16 +111,21 @@ export default function Home() {
       method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ message: text }),
     }));
   }
-  async function onImport(file: File) {
+  const onImport = useCallback(async (file: File) => {
     if (!activeId) return;
     const fd = new FormData(); fd.append("file", file);
     await streamFrom(await fetch(syllabusUrl(activeId), { method: "POST", body: fd }));
-  }
-  async function onPlanChange(next: CoursePlan) {
+  }, [activeId]);
+
+  const onPlanChange = useCallback(async (next: CoursePlan) => {
     if (!activeId) return;
     setPlan(next); setSaving(true);
     try { await patchPlan(activeId, next); } finally { setSaving(false); }
-  }
+  }, [activeId]);
+
+  const onExport = useCallback(() => {
+    if (activeId) window.open(exportUrl(activeId), "_blank");
+  }, [activeId]);
 
   const stats = plan ? courseStats(plan) : null;
   const hasPlan = !!plan && plan.modules.length > 0;
@@ -155,9 +163,8 @@ export default function Home() {
         <ChatPanel show={mobilePane === "mid"} messages={messages} streaming={streaming}
           searches={searches} busy={busy} error={error} hasPlan={hasPlan} onSend={onSend} />
         {plan && (
-          <PlanPreview show={mobilePane === "right"} plan={plan} onChange={onPlanChange}
-            onExport={() => activeId && window.open(exportUrl(activeId), "_blank")}
-            onImport={onImport} />
+          <PlanPreview show={mobilePane === "right"} plan={plan}
+            onChange={onPlanChange} onExport={onExport} onImport={onImport} />
         )}
       </div>
     </>

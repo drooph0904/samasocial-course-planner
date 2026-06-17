@@ -1,5 +1,14 @@
 import { CoursePlan, Module } from "./types";
 
+export function emptyPlan(): CoursePlan {
+  return {
+    title: "", subject: "",
+    audience: { age_group: "", skill_level: "", prior_knowledge: "" },
+    schedule: { duration: "", session_frequency: "", session_length: "" },
+    learning_goals: [], modules: [],
+  };
+}
+
 export function moduleStats(m: Module) {
   const total = m.lessons.length;
   const done = m.lessons.filter((l) => l.done).length;
