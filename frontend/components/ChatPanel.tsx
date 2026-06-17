@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { ChatMessage } from "../lib/types";
+import { renderMarkdown } from "../lib/markdown";
+import { IChat, ISearch, ISend } from "./icons";
 
 const SUGGESTIONS = [
   "Add a capstone rubric",
@@ -31,22 +33,24 @@ export function ChatPanel({
 
   return (
     <section className={`pane mid ${show ? "show" : ""}`}>
-      <div className="pane-head"><h2>💬 Chat</h2></div>
+      <div className="pane-head"><h2><IChat /> Chat</h2></div>
 
       <div className="chat-scroll" ref={scrollRef}>
         {messages.length === 0 && !streaming && (
           <p className="empty-hint">
-            👋 Tell me about the course you want to build — subject, who it&apos;s for,
+            Tell me about the course you want to build — subject, who it&apos;s for,
             how long, and your goals.
           </p>
         )}
         {messages.map((m, i) => (
-          <div key={i} className={`msg ${m.role === "user" ? "user" : "ai"}`}>{m.content}</div>
+          <div key={i} className={`msg ${m.role === "user" ? "user" : "ai"}`}>
+            {m.role === "user" ? m.content : renderMarkdown(m.content)}
+          </div>
         ))}
         {searches.length > 0 && searches.map((s, i) => (
-          <div key={`s${i}`} className="action-chip"><span>🔎</span> Searched · {s}</div>
+          <div key={`s${i}`} className="action-chip"><ISearch /> Searched · {s}</div>
         ))}
-        {streaming && <div className="msg ai">{streaming}<span style={{ opacity: 0.5 }}>▌</span></div>}
+        {streaming && <div className="msg ai">{renderMarkdown(streaming)}<span style={{ opacity: 0.5 }}>▌</span></div>}
         {error && <div className="chat-error">⚠ {error}</div>}
       </div>
 
@@ -65,7 +69,7 @@ export function ChatPanel({
             placeholder={busy ? "Thinking…" : "Ask for a change, or describe a new course…"}
             disabled={busy} />
           <button className="send" aria-label="Send" onClick={submit} disabled={busy || !text.trim()}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            <ISend />
           </button>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { CoursePlan, Lesson, Module, Resource } from "../lib/types";
 import { EditableField } from "./EditableField";
 import { moduleStats, courseStats, nextUpKey, currentModule } from "../lib/progress";
+import { IUsers, ICalendar, ILayers, IClipboard, IUpload, IDownload, ITrash } from "./icons";
 
 const Check = () => (
   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><path d="M20 6 9 17l-5-5" /></svg>
@@ -50,11 +51,11 @@ export function PlanPreview({
         <div className="curr-header">
           <div className="imp-exp">
             <label className="icon-btn bordered" style={{ cursor: "pointer" }}>
-              ⇪ Import
+              <IUpload /> Import
               <input type="file" accept="application/pdf" hidden
                 onChange={(e) => e.target.files?.[0] && onImport(e.target.files[0])} />
             </label>
-            <button className="icon-btn bordered" onClick={onExport}>⇩ Export</button>
+            <button className="icon-btn bordered" onClick={onExport}><IDownload /> Export</button>
           </div>
 
           {empty ? (
@@ -76,9 +77,9 @@ export function PlanPreview({
                 </span>
               </div>
               <div className="meta-row">
-                <span className="meta-pill">👥 {plan.audience.age_group || "—"} · {plan.audience.skill_level || "—"}</span>
-                <span className="meta-pill">📅 <span className="mono">{plan.schedule.duration || "—"}</span> · {plan.schedule.session_frequency || "—"} · <span className="mono">{plan.schedule.session_length || "—"}</span></span>
-                <span className="meta-pill">📚 <span className="mono">{plan.modules.length}</span> modules · <span className="mono">{stats.total}</span> lessons</span>
+                <span className="meta-pill"><IUsers /> {plan.audience.age_group || "—"} · {plan.audience.skill_level || "—"}</span>
+                <span className="meta-pill"><ICalendar /> <span className="mono">{plan.schedule.duration || "—"}</span> · {plan.schedule.session_frequency || "—"} · <span className="mono">{plan.schedule.session_length || "—"}</span></span>
+                <span className="meta-pill"><ILayers /> <span className="mono">{plan.modules.length}</span> modules · <span className="mono">{stats.total}</span> lessons</span>
               </div>
 
               <div className="progress-block">
@@ -144,7 +145,7 @@ export function PlanPreview({
                         </div>
                         <div className="mbar"><div className="bar"><i style={{ width: `${ms.pct}%`, background: barColor }} /></div></div>
                         <span className="mdel" title="Delete module"
-                          onClick={(e) => { e.stopPropagation(); if (confirm("Delete this module?")) set((d) => { d.modules.splice(mi, 1); }); }}>🗑</span>
+                          onClick={(e) => { e.stopPropagation(); if (confirm("Delete this module?")) set((d) => { d.modules.splice(mi, 1); }); }}><ITrash /></span>
                         <span className="caret">▾</span>
                       </div>
 
@@ -189,7 +190,7 @@ export function PlanPreview({
                                   </span>
                                   <span className={`status ${statusCls}`}>{statusTxt}</span>
                                   <span className="ldel" title="Delete lesson"
-                                    onClick={() => set((d) => { d.modules[mi].lessons.splice(li, 1); })}>🗑</span>
+                                    onClick={() => set((d) => { d.modules[mi].lessons.splice(li, 1); })}><ITrash /></span>
                                 </div>
                                 <div className="ltopics">
                                   <EditableField value={l.topics.join(" · ")} placeholder="add topics"
@@ -217,7 +218,7 @@ export function PlanPreview({
                         </div>
 
                         <div className="assessment">
-                          <span>📝</span>
+                          <IClipboard />
                           <div><b>Assessment:</b>{" "}
                             <EditableField value={m.assessment} placeholder="add an assessment"
                               onSave={(v) => set((d) => { d.modules[mi].assessment = v; })} />

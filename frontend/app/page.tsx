@@ -6,6 +6,7 @@ import { Sidebar } from "../components/Sidebar";
 import { ChatMessage, CoursePlan, SessionSummary } from "../lib/types";
 import { useTheme } from "../lib/theme";
 import { courseStats } from "../lib/progress";
+import { ISun, IMoon, IShare } from "../components/icons";
 import {
   createSession, getSession, listSessions, deleteSession, deleteSessions,
   patchPlan, chatUrl, syllabusUrl, exportUrl,
@@ -139,8 +140,8 @@ export default function Home() {
           <div className="savestate">
             <span className={`dot ${saving ? "saving" : ""}`} />{saving ? "Saving…" : "Saved"}
           </div>
-          <button className="icon-btn" onClick={toggleTheme} aria-label="Toggle theme">{theme === "dark" ? "☀" : "☾"}</button>
-          <button className="btn-primary" onClick={() => activeId && window.open(exportUrl(activeId), "_blank")}>⤴ Share</button>
+          <button className="icon-btn" onClick={toggleTheme} aria-label="Toggle theme">{theme === "dark" ? <ISun /> : <IMoon />}</button>
+          <button className="btn-primary" onClick={() => activeId && window.open(exportUrl(activeId), "_blank")}><IShare /> Share</button>
         </div>
       </header>
 
