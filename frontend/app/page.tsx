@@ -127,37 +127,51 @@ export default function Home() {
     }
   }
 
-  async function streamFrom(resp: Response) {
+  // Centralized streaming runner. ALWAYS resets `busy` (try/finally) so a
+  // dropped connection or fetch error can never leave the composer disabled.
+  async function runStream(makeRequest: () => Promise<Response>) {
     setStreaming(""); setSearches([]); setError(null); setBusy(true);
     let acc = "";
-    await readSSE(resp, (event, data) => {
-      if (event === "token") { acc += data.text ?? ""; setStreaming(acc); }
-      else if (event === "sources") setSearches((p) => [...p, ...(data.searches ?? [])]);
-      else if (event === "plan_update") {
-        const p = data.plan as CoursePlan | undefined;
-        if (!p) return;
-        setPlan(p);
-        const title = (p.title ?? "").trim();
-        if (title) { const id = activeIdRef.current; setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, title } : s))); }
-      } else if (event === "error") setError(data.message ?? "Something went wrong");
-    });
-    if (acc.trim()) setMessages((m) => [...m, { role: "assistant", content: acc.trim() }]);
-    setStreaming(""); setBusy(false);
+    try {
+      const resp = await makeRequest();
+      if (!resp.ok || !resp.body) {
+        setError(`Request failed (${resp.status}). Please try again.`);
+        return;
+      }
+      await readSSE(resp, (event, data) => {
+        if (event === "token") { acc += data.text ?? ""; setStreaming(acc); }
+        else if (event === "sources") setSearches((p) => [...p, ...(data.searches ?? [])]);
+        else if (event === "plan_update") {
+          const p = data.plan as CoursePlan | undefined;
+          if (!p) return;
+          setPlan(p);
+          const title = (p.title ?? "").trim();
+          if (title) { const id = activeIdRef.current; setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, title } : s))); }
+        } else if (event === "error") setError(data.message ?? "Something went wrong");
+      });
+      if (acc.trim()) setMessages((m) => [...m, { role: "assistant", content: acc.trim() }]);
+    } catch {
+      setError("Connection interrupted. Please try again.");
+    } finally {
+      setStreaming(""); setBusy(false);
+    }
   }
 
   async function onSend(text: string) {
-    if (!activeId) return;
+    const id = activeIdRef.current;
+    if (!id || busyRef.current) return;
     setMessages((m) => [...m, { role: "user", content: text }]);
     setMobilePane("right");
-    await streamFrom(await fetch(chatUrl(activeId), {
+    await runStream(() => fetch(chatUrl(id), {
       method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ message: text }),
     }));
   }
   const onImport = useCallback(async (file: File) => {
-    if (!activeId) return;
+    const id = activeIdRef.current;
+    if (!id || busyRef.current) return;
     const fd = new FormData(); fd.append("file", file);
-    await streamFrom(await fetch(syllabusUrl(activeId), { method: "POST", body: fd }));
-  }, [activeId]);
+    await runStream(() => fetch(syllabusUrl(id), { method: "POST", body: fd }));
+  }, []);
 
   const onPlanChange = useCallback(async (next: CoursePlan) => {
     if (!activeId) return;
