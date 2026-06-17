@@ -25,6 +25,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [mutating, setMutating] = useState(false);
   const [mobilePane, setMobilePane] = useState<"mid" | "right">("mid");
   const [leftOpen, setLeftOpen] = useState(false);
 
@@ -96,20 +97,28 @@ export default function Home() {
   }, []);
 
   async function newCourse() {
-    const created = await createSession();
-    // optimistic: a new course has empty chat + empty plan, so skip the re-fetch
-    setSessions((prev) => [{ id: created.id, title: created.title }, ...prev]);
-    setActiveId(created.id); localStorage.setItem("activeSessionId", created.id);
-    setMessages([]); setPlan(emptyPlan());
-    setStreaming(""); setSearches([]); setError(null); setLeftOpen(false);
+    setMutating(true);
+    try {
+      const created = await createSession();
+      // optimistic: a new course has empty chat + empty plan, so skip the re-fetch
+      setSessions((prev) => [{ id: created.id, title: created.title }, ...prev]);
+      setActiveId(created.id); localStorage.setItem("activeSessionId", created.id);
+      setMessages([]); setPlan(emptyPlan());
+      setStreaming(""); setSearches([]); setError(null); setLeftOpen(false);
+    } finally { setMutating(false); }
   }
   async function deleteCourse(id: string) {
     if (!window.confirm("Delete this course? This removes its chat and plan permanently.")) return;
-    await deleteSession(id); await afterRemoval(sessions.filter((s) => s.id !== id));
+    setMutating(true);
+    try { await deleteSession(id); await afterRemoval(sessions.filter((s) => s.id !== id)); }
+    finally { setMutating(false); }
   }
   async function deleteManyCourses(ids: string[]) {
-    await deleteSessions(ids);
-    const removed = new Set(ids); await afterRemoval(sessions.filter((s) => !removed.has(s.id)));
+    setMutating(true);
+    try {
+      await deleteSessions(ids);
+      const removed = new Set(ids); await afterRemoval(sessions.filter((s) => !removed.has(s.id)));
+    } finally { setMutating(false); }
   }
   async function afterRemoval(remaining: SessionSummary[]) {
     setSessions(remaining);
@@ -162,9 +171,13 @@ export default function Home() {
 
   const stats = plan ? courseStats(plan) : null;
   const hasPlan = !!plan && plan.modules.length > 0;
+  const working = busy || loading || saving || mutating;
+  const statusLabel = busy ? "Generating…" : loading ? "Loading…"
+    : mutating ? "Working…" : saving ? "Saving…" : "Saved";
 
   return (
     <>
+      <div className={`toploader ${working ? "active" : ""}`} aria-hidden />
       <header className="topbar">
         <div className="brand">
           <button className="icon-btn menu-btn" aria-label="Menu" onClick={() => setLeftOpen((v) => !v)}>☰</button>
@@ -179,7 +192,7 @@ export default function Home() {
         </div>
         <div className="topbar-right">
           <div className="savestate">
-            <span className={`dot ${saving ? "saving" : ""}`} />{saving ? "Saving…" : "Saved"}
+            {working ? <span className="spinner" /> : <span className="dot" />}{statusLabel}
           </div>
           <button className="icon-btn" onClick={toggleTheme} aria-label="Toggle theme">{theme === "dark" ? <ISun /> : <IMoon />}</button>
           <button className="btn-primary" onClick={() => activeId && window.open(exportUrl(activeId), "_blank")}><IShare /> Share</button>

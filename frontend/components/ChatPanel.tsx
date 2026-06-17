@@ -51,6 +51,11 @@ export function ChatPanel({
           <div key={`s${i}`} className="action-chip"><ISearch /> Searched · {s}</div>
         ))}
         {streaming && <div className="msg ai">{renderMarkdown(streaming)}<span style={{ opacity: 0.5 }}>▌</span></div>}
+        {busy && !streaming && (
+          <div className="msg ai typing" aria-label="Assistant is thinking">
+            <span /><span /><span />
+          </div>
+        )}
         {error && <div className="chat-error">⚠ {error}</div>}
       </div>
 

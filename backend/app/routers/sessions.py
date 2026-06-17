@@ -17,7 +17,8 @@ class CreateSession(BaseModel):
 def create_session(body: CreateSession):
     store = make_store()
     sid = store.create_session(body.title)
-    store.save_plan(sid, empty_plan())
+    # no empty-plan write here: GET falls back to empty_plan() until the first
+    # real save (PATCH or AI). Saves a Supabase round-trip per new course.
     return {"id": sid, "title": body.title}
 
 
