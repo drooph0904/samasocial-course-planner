@@ -10,9 +10,9 @@ A conversational AI assistant (Samasocial Technical Assignment — **Task 2**) t
 
 **Core**
 - **Intake** — asks for subject, audience (age, skill level, prior knowledge), duration & session frequency, and learning goals before generating.
-- **Course generation** — structured plan: modules (titles + objectives), lesson topics, recommended **public** resources per lesson, and module-end assessments.
+- **Course generation** — structured plan: modules (titles + objectives), lesson topics, recommended **public** resources per lesson, and a separate **quiz and/or assignment** per module (the mentor chooses either or both).
 - **Refinement** — adjust any part via chat ("make module 2 simpler", "add a project-based assignment").
-- **Live, editable preview** — the plan renders beside the chat and updates in real time; click any field to edit it.
+- **Live, editable preview** — the plan renders beside the chat and updates in real time; click any field to edit it (title, goals, lessons, topics, resources with links, quiz, assignment) with autosave.
 - **Export** — download the plan as structured JSON.
 - **Multi-turn memory** — the full planning conversation persists per session.
 
@@ -20,6 +20,11 @@ A conversational AI assistant (Samasocial Technical Assignment — **Task 2**) t
 - **Syllabus PDF import** — upload an existing syllabus; the assistant restructures it into a plan.
 - **Difficulty indicator per lesson** — beginner / intermediate / advanced badges.
 - **Prerequisite topics per module.**
+
+**Extras (beyond the brief)**
+- **Multi-course library** — sidebar to create, search, switch, and bulk-delete courses; `⌘⇧O` for a new course.
+- **Progress tracking** — per-lesson completion checkboxes drive per-module bars and an overall progress ring (preserved across AI regeneration).
+- **Timeline-spine UI** — editorial split-panel design, **dark/light theme**, responsive single-column layout below 1080px, and live processing indicators.
 
 ---
 
