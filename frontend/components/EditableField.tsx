@@ -9,9 +9,12 @@ export function EditableField({
 
   if (!editing) {
     return (
-      <span onClick={() => { setDraft(value); setEditing(true); }}
-            style={{ cursor: "text", borderBottom: "1px dashed #cbd5e1" }}>
-        {value || <em style={{ color: "#94a3b8" }}>{placeholder}</em>}
+      <span
+        title="Click to edit"
+        onClick={() => { setDraft(value); setEditing(true); }}
+        style={{ cursor: "text", borderBottom: "1px dashed var(--text-faint)" }}
+      >
+        {value || <em style={{ color: "var(--text-faint)" }}>{placeholder}</em>}
       </span>
     );
   }

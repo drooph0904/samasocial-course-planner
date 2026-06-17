@@ -4,13 +4,15 @@ import { ChatPanel } from "../components/ChatPanel";
 import { PlanPreview } from "../components/PlanPreview";
 import { Sidebar } from "../components/Sidebar";
 import { ChatMessage, CoursePlan, SessionSummary } from "../lib/types";
+import { useTheme } from "../lib/theme";
 import {
-  createSession, getSession, listSessions, deleteSession,
+  createSession, getSession, listSessions, deleteSession, deleteSessions,
   patchPlan, chatUrl, syllabusUrl, exportUrl,
 } from "../lib/api";
 import { readSSE } from "../lib/sse";
 
 export default function Home() {
+  const [theme, toggleTheme] = useTheme();
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -22,6 +24,8 @@ export default function Home() {
 
   const activeIdRef = useRef<string | null>(null);
   activeIdRef.current = activeId;
+  const busyRef = useRef(false);
+  busyRef.current = busy;
 
   // ---- session loading -------------------------------------------------------
 
@@ -55,6 +59,20 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ---- keyboard shortcut: Cmd/Ctrl+Shift+O -> new course ---------------------
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "o") {
+        e.preventDefault();
+        if (!busyRef.current) newCourse();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ---- session actions -------------------------------------------------------
 
   async function newCourse() {
@@ -67,9 +85,20 @@ export default function Home() {
   async function deleteCourse(id: string) {
     if (!window.confirm("Delete this course? This removes its chat and plan permanently.")) return;
     await deleteSession(id);
-    const remaining = sessions.filter((s) => s.id !== id);
+    await afterRemoval(sessions.filter((s) => s.id !== id), id);
+  }
+
+  async function deleteManyCourses(ids: string[]) {
+    await deleteSessions(ids);
+    const removed = new Set(ids);
+    await afterRemoval(sessions.filter((s) => !removed.has(s.id)), activeId ?? "");
+  }
+
+  /** Shared cleanup after deleting one or many sessions. */
+  async function afterRemoval(remaining: SessionSummary[], removedActive: string) {
     setSessions(remaining);
-    if (id === activeId) {
+    const activeGone = !remaining.some((s) => s.id === activeId);
+    if (activeGone) {
       if (remaining.length > 0) await loadSession(remaining[0].id);
       else await newCourse();
     }
@@ -123,19 +152,20 @@ export default function Home() {
   // ---- layout ----------------------------------------------------------------
 
   return (
-    <main style={{ display: "grid", gridTemplateColumns: "260px 1fr 1fr", height: "100vh" }}>
+    <main style={{ display: "grid", gridTemplateColumns: "260px 1fr 1fr", height: "100vh", background: "var(--bg)" }}>
       <aside style={{ height: "100vh", overflow: "hidden" }}>
         <Sidebar
           sessions={sessions} activeId={activeId}
           onSelect={(id) => id !== activeId && loadSession(id)}
-          onNew={newCourse} onDelete={deleteCourse}
+          onNew={newCourse} onDelete={deleteCourse} onDeleteMany={deleteManyCourses}
+          theme={theme} onToggleTheme={toggleTheme}
         />
       </aside>
-      <section style={{ borderRight: "1px solid #e2e8f0", borderLeft: "1px solid #e2e8f0", height: "100vh" }}>
+      <section style={{ borderRight: "1px solid var(--border)", height: "100vh", background: "var(--bg)" }}>
         <ChatPanel messages={messages} streaming={streaming} searches={searches}
           busy={busy} error={error} onSend={onSend} />
       </section>
-      <section style={{ height: "100vh" }}>
+      <section style={{ height: "100vh", background: "var(--bg-panel)" }}>
         {plan && (
           <PlanPreview plan={plan} onChange={onPlanChange}
             onExport={() => activeId && window.open(exportUrl(activeId), "_blank")}

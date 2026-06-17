@@ -13,3 +13,4 @@ export interface CoursePlan {
 }
 export interface ChatMessage { role: "user" | "assistant"; content: string; }
 export interface SessionSummary { id: string; title: string; created_at?: string; }
+export type Theme = "dark" | "light";

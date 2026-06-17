@@ -1,5 +1,135 @@
+/* ---- Theme tokens (Discord-like). Dark is the default. ---- */
+:root,
+:root[data-theme="dark"] {
+  --bg: #313338;
+  --bg-sidebar: #2b2d31;
+  --bg-darkest: #1e1f22;
+  --bg-panel: #2b2d31;
+  --bg-elevated: #383a40;
+  --bg-hover: #3a3c42;
+  --bg-input: #1e1f22;
+  --text: #f2f3f5;
+  --text-muted: #b5bac1;
+  --text-faint: #80848e;
+  --border: #26272b;
+  --accent: #5865f2;
+  --accent-hover: #4752c4;
+  --accent-text: #ffffff;
+  --danger: #da373c;
+  --danger-hover: #a12d2f;
+  --success: #23a55a;
+  --user-bubble: #5865f2;
+  --user-bubble-text: #ffffff;
+  --assistant-bubble: #383a40;
+  --assistant-bubble-text: #f2f3f5;
+  --chip-bg: #3c3f8f;
+  --chip-text: #dee0fc;
+  --link: #00a8fc;
+  --diff-beginner-bg: #1f5b3a;
+  --diff-intermediate-bg: #6b5e1a;
+  --diff-advanced-bg: #6e2b2e;
+  --diff-text: #f2f3f5;
+  --shadow: 0 1px 0 rgba(0,0,0,0.2);
+}
+
+:root[data-theme="light"] {
+  --bg: #ffffff;
+  --bg-sidebar: #f2f3f5;
+  --bg-darkest: #e3e5e8;
+  --bg-panel: #f8f9fb;
+  --bg-elevated: #ffffff;
+  --bg-hover: #e9eaed;
+  --bg-input: #ffffff;
+  --text: #1a1b1e;
+  --text-muted: #4e5058;
+  --text-faint: #80848e;
+  --border: #e0e1e5;
+  --accent: #5865f2;
+  --accent-hover: #4752c4;
+  --accent-text: #ffffff;
+  --danger: #d83c3e;
+  --danger-hover: #b32b2d;
+  --success: #1a8245;
+  --user-bubble: #5865f2;
+  --user-bubble-text: #ffffff;
+  --assistant-bubble: #eef0f3;
+  --assistant-bubble-text: #1a1b1e;
+  --chip-bg: #e0e3ff;
+  --chip-text: #3730a3;
+  --link: #0067c0;
+  --diff-beginner-bg: #dcfce7;
+  --diff-intermediate-bg: #fef9c3;
+  --diff-advanced-bg: #fee2e2;
+  --diff-text: #1a1b1e;
+  --shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: #0f172a; }
-button { cursor: pointer; border: 1px solid #cbd5e1; background: #3730a3; color: white; border-radius: 6px; padding: 6px 12px; }
-button:disabled { background: #94a3b8; cursor: not-allowed; }
-a { color: #4f46e5; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: "gg sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Buttons */
+button {
+  cursor: pointer;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-text);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.12s ease, opacity 0.12s ease;
+}
+button:hover:not(:disabled) { background: var(--accent-hover); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+button.ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+button.ghost:hover:not(:disabled) { background: var(--bg-hover); color: var(--text); }
+
+button.danger { background: var(--danger); }
+button.danger:hover:not(:disabled) { background: var(--danger-hover); }
+
+/* Inputs */
+input, textarea {
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+input:focus, textarea:focus { border-color: var(--accent); }
+
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+h1, h2, h3, h4 { color: var(--text); }
+
+kbd {
+  background: var(--bg-darkest);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 11px;
+  font-family: ui-monospace, monospace;
+  color: var(--text-muted);
+}
+
+/* Scrollbars (Discord-style thin) */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--bg-darkest); border-radius: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+* { scrollbar-width: thin; scrollbar-color: var(--bg-darkest) transparent; }

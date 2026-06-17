@@ -20,6 +20,10 @@ export async function deleteSession(id: string) {
   await fetch(`${BASE}/api/sessions/${id}`, { method: "DELETE" });
 }
 
+export async function deleteSessions(ids: string[]) {
+  await Promise.all(ids.map((id) => deleteSession(id)));
+}
+
 export async function getSession(id: string) {
   const r = await fetch(`${BASE}/api/sessions/${id}`);
   return r.json();
