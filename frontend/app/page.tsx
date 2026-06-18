@@ -148,6 +148,7 @@ export default function Home() {
           const title = (p.title ?? "").trim();
           if (title) { const id = activeIdRef.current; setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, title } : s))); }
         } else if (event === "error") setError(data.message ?? "Something went wrong");
+        else if (event === "done") return true; // terminal — stop reading immediately
       });
       if (acc.trim()) setMessages((m) => [...m, { role: "assistant", content: acc.trim() }]);
     } catch {

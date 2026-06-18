@@ -48,9 +48,10 @@ async def import_syllabus(session_id: str, file: UploadFile = File(...)):
         async for event, data in run_turn(client, model, history, current_plan, save_plan):
             if event == "token":
                 assistant_text.append(data["text"])
+            if event == "done":
+                text_out = "".join(assistant_text).strip()
+                if text_out:
+                    store.add_message(session_id, "assistant", text_out)
             yield sse_event(event, data)
-        text_out = "".join(assistant_text).strip()
-        if text_out:
-            store.add_message(session_id, "assistant", text_out)
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")

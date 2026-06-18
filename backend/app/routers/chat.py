@@ -42,10 +42,12 @@ async def chat(session_id: str, body: ChatBody):
         ):
             if event == "token":
                 assistant_text.append(data["text"])
+            # persist the assistant's chat text BEFORE the terminal `done` so a
+            # client that disconnects on `done` can't race the DB write away
+            if event == "done":
+                text = "".join(assistant_text).strip()
+                if text:
+                    store.add_message(session_id, "assistant", text)
             yield sse_event(event, data)
-        # persist the assistant's chat text for multi-turn continuity
-        text = "".join(assistant_text).strip()
-        if text:
-            store.add_message(session_id, "assistant", text)
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
